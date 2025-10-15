@@ -1,48 +1,45 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import { CohereClient } from "cohere-ai";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const app = express();
-
-// ✅ CORS Setup (allow Netlify + local)
-app.use(cors({
-  origin: [
-    "http://localhost:5500",              // local dev via VSCode Live Server
-    "http://localhost:3000",              // backend local
-    "https://paramvakya.netlify.app",     // your Netlify site
-    "https://paramvakya-chatbot.onrender.com" // your Render backend
-  ],
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
-
 app.use(express.json());
+app.use(cors());
 
-// ✅ Serve static files (like HTML/JS/CSS)
-app.use(express.static(__dirname));
-
-// ✅ Root test route
-app.get("/", (req, res) => {
-  res.send("✅ Paramvakya backend is live and connected!");
+const cohere = new CohereClient({
+  token: process.env.COHERE_API_KEY,
 });
 
-// ✅ Chat route (main API)
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
+  try {
+    const userMessage = req.body.message;
+    console.log("Received userMessage:", userMessage);
 
-  if (!message) {
-    return res.status(400).json({ reply: "Please send a valid message." });
+    if (!userMessage) {
+      return res.status(400).json({ error: "No message received" });
+    }
+
+    const payload = {
+      model: "command-r-08-2024",  // use a safe, supported model
+      message: userMessage,
+    };
+    console.log("Payload to Cohere.chat:", payload);
+
+    const response = await cohere.chat(payload);
+
+    console.log("Response from Cohere:", response);
+
+    const reply = response.text;  // property `.text`
+    res.json({ reply });
+  } catch (err) {
+    console.error("Cohere API error:", err);
+    res.status(500).json({ error: "Something went wrong with Cohere API" });
   }
-
-  // 🔥 Example mock reply (replace this later with your chatbot logic)
-  const reply = `You said: ${message}`;
-  res.json({ reply });
 });
 
-// ✅ Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(3000, () => {
+  console.log("✅ Chatbot backend running at http://localhost:3000");
+});
