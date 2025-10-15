@@ -296,11 +296,15 @@ async function sendMessage(isVoiceInput = false) {
   appendMessage('⏳ Thinking...', 'bot', false);
 
   try {
-    const res = await fetch('https://paramvakya-chatbot.onrender.com/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message })
-    });
+    const API_BASE = window.location.hostname.includes('localhost')
+  ? 'http://localhost:3000'
+  : 'https://paramvakya-chatbot.onrender.com';
+
+const res = await fetch(`${API_BASE}/chat`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message })
+});
     const data = await res.json();
 
     messages.lastChild.remove(); // remove "Thinking..."
@@ -387,4 +391,5 @@ loadChat(currentChatId);
 
 </body>
 </html>
+
 
