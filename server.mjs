@@ -7,23 +7,42 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS Setup (allow Netlify + local)
+app.use(cors({
+  origin: [
+    "http://localhost:5500",              // local dev via VSCode Live Server
+    "http://localhost:3000",              // backend local
+    "https://paramvakya.netlify.app",     // your Netlify site
+    "https://paramvakya-chatbot.onrender.com" // your Render backend
+  ],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
-// ✅ Serve all static files (HTML, CSS, JS)
+// ✅ Serve static files (like HTML/JS/CSS)
 app.use(express.static(__dirname));
 
-// ✅ Serve chat.html for root URL
+// ✅ Root test route
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "chat.html"));
+  res.send("✅ Paramvakya backend is live and connected!");
 });
 
-// === Your existing chat endpoint ===
+// ✅ Chat route (main API)
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
-  // handle logic or return a mock response
-  res.json({ reply: `You said: ${message}` });
+
+  if (!message) {
+    return res.status(400).json({ reply: "Please send a valid message." });
+  }
+
+  // 🔥 Example mock reply (replace this later with your chatbot logic)
+  const reply = `You said: ${message}`;
+  res.json({ reply });
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
